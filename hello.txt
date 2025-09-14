@@ -1,0 +1,14 @@
+Dear HR Manager,
+
+Thank you for the reminder regarding the Developer Practical Task submission. I have completed the task and just submitted it through the provided Google Form link.
+
+I have implemented a full-stack solution that includes both frontend and backend components. The submission is include:
+- Complete GitHub repository with clean, documented code
+- Clear indication of the full-stack implementation
+- Screenshots demonstrating the application functionality
+- Brief video walkthrough of key features
+
+I appreciate the opportunity to showcase my Full Stack development skills and look forward to discussing the next steps of the process.
+
+Best regards,
+Rahul Saini
