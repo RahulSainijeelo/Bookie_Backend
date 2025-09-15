@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
 import { registerSchema, loginSchema } from '../validations/auth.validation';
+import { handleError } from '../utils/api.utils';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -16,9 +17,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    const { name, email, password } = validationResult.data;
-    
-    // Rest of registration logic remains the same
+    const { name, email, password, role } = validationResult.data;
+ 
     const userExists = await prisma.user.findUnique({
       where: { email }
     });
@@ -27,32 +27,35 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ message: 'User already exists' });
       return;
     }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        role
       }
     });
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
 
     res.status(201).json({
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: (error as Error).message });
+    handleError(error, res, 'Error during registration');
   }
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Validate request body
     const validationResult = loginSchema.safeParse(req.body);
     
     if (!validationResult.success) {
@@ -63,35 +66,37 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    const { email, password } = validationResult.data;
-    
-    // Rest of login logic remains the same
-    const user = await prisma.user.findUnique({
-      where: { email }
+    const { email, password, role } = validationResult.data;
+  
+    const user = await prisma.user.findFirst({
+      where: { 
+        email,
+        role
+      }
     });
     
     if (!user) {
-      res.status(401).json({ message: 'Invalid credentials' });
+      res.status(401).json({ message: 'Invalid credentials or role' });
       return;
     }
 
-    // Verify password
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       res.status(401).json({ message: 'Invalid credentials' });
       return;
     }
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
 
     res.json({
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: (error as Error).message });
+    handleError(error, res, 'Error during login');
   }
 };
 
@@ -99,12 +104,18 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
   try {
     const userId = req.user?.id;
     
+    if (!userId) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+    
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         name: true,
         email: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
       }
@@ -117,30 +128,64 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
     
     res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: (error as Error).message });
+    handleError(error, res, 'Error fetching user profile');
   }
 };
 
 export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
+    const userRole = req.user?.role;
+    
+    if (userRole !== 'ADMIN') {
+      res.status(403).json({ message: 'Not authorized to access this resource' });
+      return;
+    }
+    
     const users = await prisma.user.findMany({
       select: {
         id: true,
         name: true,
         email: true,
+        role: true,
         createdAt: true,
         updatedAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
     
     res.json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: (error as Error).message });
+    handleError(error, res, 'Error fetching users');
   }
 };
 
-const generateToken = (id: string): string => {
-  return jwt.sign({ id }, process.env.JWT_SECRET as string, {
+export const refreshToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+    
+    if (!userId || !userRole) {
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
+    }
+    
+    // Generate new token
+    const token = generateToken(userId, userRole);
+    
+    res.json({ token });
+  } catch (error) {
+    handleError(error, res, 'Error refreshing token');
+  }
+};
+
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  res.json({ message: 'Logout successful' });
+};
+
+const generateToken = (id: string, role: string): string => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET as string, {
     expiresIn: '30d',
   });
 };

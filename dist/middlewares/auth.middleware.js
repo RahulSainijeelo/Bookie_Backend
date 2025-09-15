@@ -27,7 +27,7 @@ const authenticate = async (req, res, next) => {
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         if (typeof decoded === 'object' && decoded && 'id' in decoded) {
-            req.user = { id: decoded.id };
+            req.user = { id: decoded.id, role: decoded.role };
             next();
         }
         else {

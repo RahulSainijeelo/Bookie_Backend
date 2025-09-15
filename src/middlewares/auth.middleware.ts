@@ -6,6 +6,7 @@ declare global {
     interface Request {
       user?: {
         id: string;
+        role:string
       };
     }
   }
@@ -37,10 +38,10 @@ export const authenticate = async (
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded:any = jwt.verify(token, process.env.JWT_SECRET);
   
     if (typeof decoded === 'object' && decoded && 'id' in decoded) {
-      req.user = { id: decoded.id as string };
+      req.user = { id: decoded.id as string,role:decoded.role as string };
       next();
     } else {
       res.status(401).json({ message: 'Invalid token payload' });

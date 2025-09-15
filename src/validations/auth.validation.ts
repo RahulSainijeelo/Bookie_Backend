@@ -16,7 +16,10 @@ export const registerSchema = z.object({
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-    )
+    ),
+  
+  role: z.enum(['USER', 'SELLER'])
+    .default('USER')
 });
 
 export const loginSchema = z.object({
@@ -26,5 +29,7 @@ export const loginSchema = z.object({
     .toLowerCase(),
   
   password: z.string()
-    .min(1, "Password is required")
+    .min(1, "Password is required"),
+     
+  role: z.enum(['USER', 'SELLER'])
 });

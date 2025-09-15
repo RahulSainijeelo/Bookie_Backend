@@ -13,7 +13,9 @@ exports.registerSchema = zod_1.z.object({
         .toLowerCase(),
     password: zod_1.z.string()
         .min(6, "Password must be at least 6 characters")
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain at least one uppercase letter, one lowercase letter, and one number")
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
+    role: zod_1.z.enum(['USER', 'SELLER'])
+        .default('USER')
 });
 exports.loginSchema = zod_1.z.object({
     email: zod_1.z.string()
@@ -21,6 +23,7 @@ exports.loginSchema = zod_1.z.object({
         .trim()
         .toLowerCase(),
     password: zod_1.z.string()
-        .min(1, "Password is required")
+        .min(1, "Password is required"),
+    role: zod_1.z.enum(['USER', 'SELLER'])
 });
 //# sourceMappingURL=auth.validation.js.map
