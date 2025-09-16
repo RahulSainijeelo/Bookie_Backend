@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCategoryById = exports.getBooksByCategoryId = exports.getAllCategories = void 0;
+exports.createCategory = exports.getCategoryById = exports.getBooksByCategoryId = exports.getAllCategories = void 0;
 const category_service_1 = require("../services/category.service");
 const category_validation_1 = require("../validations/category.validation");
 const api_utils_1 = require("../utils/api.utils");
+const category_utils_1 = require("../utils/category.utils");
 const formatCategory = (category) => ({
     id: category.id,
     name: category.name,
@@ -83,4 +84,27 @@ const getCategoryById = async (req, res) => {
     }
 };
 exports.getCategoryById = getCategoryById;
+const createCategory = async (req, res) => {
+    try {
+        const categoryData = validateParams(category_validation_1.createCategorySchema, req.body, res);
+        if (!categoryData)
+            return;
+        try {
+            const newCategory = await category_service_1.categoryService.createCategory(categoryData);
+            res.status(201).json({
+                message: 'Category created successfully',
+                category: formatCategory(newCategory)
+            });
+        }
+        catch (error) {
+            if ((0, category_utils_1.handleCategoryError)(error, res))
+                return;
+            throw error;
+        }
+    }
+    catch (error) {
+        (0, api_utils_1.handleError)(error, res, 'Error creating category');
+    }
+};
+exports.createCategory = createCategory;
 //# sourceMappingURL=categories.controller.js.map

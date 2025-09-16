@@ -57,7 +57,7 @@ model Book {
   title       String
   author      String
   description String?
-  isApproved  Boolean     @default(false)
+  isApproved  Boolean     @default(true)
   price       Float
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])
